@@ -90,18 +90,24 @@ class MovieFragment : Fragment(R.layout.fragment_movie) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        Linkify.addLinks(binding.explanation, Linkify.ALL)
-        binding.pip.setOnClickListener { minimize() }
-        binding.switchExample.setOnClickListener {
-            parentFragmentManager.popBackStack()
+        binding.run {
+            Linkify.addLinks(explanation, Linkify.ALL)
+            pip.setOnClickListener { minimize() }
+            switchExample.setOnClickListener {
+                parentFragmentManager.popBackStack()
+            }
+
+            // Configure parameters for the picture-in-picture mode. We do this at the first layout of
+            // the MovieView because we use its layout position and size.
+            movie.doOnLayout { updatePictureInPictureParams() }
+
+            // Set up the video; it automatically starts.
+            movie.setMovieListener(movieListener)
+            back.setOnClickListener {
+                parentFragmentManager.popBackStack()
+            }
         }
 
-        // Configure parameters for the picture-in-picture mode. We do this at the first layout of
-        // the MovieView because we use its layout position and size.
-        binding.movie.doOnLayout { updatePictureInPictureParams() }
-
-        // Set up the video; it automatically starts.
-        binding.movie.setMovieListener(movieListener)
     }
 
     override fun onStart() {
@@ -118,7 +124,6 @@ class MovieFragment : Fragment(R.layout.fragment_movie) {
             .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, binding.movie.title)
             .build()
         session.setMetadata(metadata)
-
         session.setCallback(MediaSessionCallback(binding.movie))
 
         val state = if (binding.movie.isPlaying) {

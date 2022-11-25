@@ -1,12 +1,30 @@
 package com.example.android.pictureinpicture
 
 import android.content.res.Configuration
+import android.os.Bundle
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 
 class MainActivity : AppCompatActivity(R.layout.main_activity) {
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                supportFragmentManager.run {
+                    if (backStackEntryCount == 0) {
+                        finish()
+                    } else {
+                        popBackStack()
+                    }
+                }
+            }
+        })
+    }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
@@ -26,12 +44,8 @@ class MainActivity : AppCompatActivity(R.layout.main_activity) {
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         if (config.orientation == Configuration.ORIENTATION_LANDSCAPE) {
             insetsController?.hide(WindowInsetsCompat.Type.systemBars())
-//            binding.scroll.visibility = View.GONE
-//            binding.movie.setAdjustViewBounds(false)
         } else {
             insetsController?.show(WindowInsetsCompat.Type.systemBars())
-//            binding.scroll.visibility = View.VISIBLE
-//            binding.movie.setAdjustViewBounds(true)
         }
     }
 }

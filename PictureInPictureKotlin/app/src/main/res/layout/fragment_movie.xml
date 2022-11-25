@@ -57,6 +57,13 @@
                 android:layout_marginTop="@dimen/spacing_medium"
                 android:text="@string/switch_custom" />
 
+            <Button
+                android:id="@+id/back"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_medium"
+                android:text="@string/btn_back" />
+
         </LinearLayout>
 
     </ScrollView>

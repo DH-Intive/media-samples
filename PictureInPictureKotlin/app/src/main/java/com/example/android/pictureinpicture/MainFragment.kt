@@ -76,17 +76,20 @@ class MainFragment : Fragment(R.layout.fragment_main) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Event handlers
-        binding.clear.setOnClickListener { viewModel.clear() }
-        binding.startOrPause.setOnClickListener { viewModel.startOrPause() }
-        binding.pip.setOnClickListener {
-            requireActivity().enterPictureInPictureMode(
-                updatePictureInPictureParams(viewModel.started.value == true)
-            )
-        }
-        binding.switchExample.setOnClickListener {
-            parentFragmentManager.commit {
-                replace(R.id.fragment_container, MovieFragment.newInstance())
+        binding.run {
+            // Event handlers
+            clear.setOnClickListener { viewModel.clear() }
+            startOrPause.setOnClickListener { viewModel.startOrPause() }
+            pip.setOnClickListener {
+                requireActivity().enterPictureInPictureMode(
+                    updatePictureInPictureParams(viewModel.started.value == true)
+                )
+            }
+            switchExample.setOnClickListener {
+                parentFragmentManager.commit {
+                    replace(R.id.fragment_container, MovieFragment.newInstance())
+                    addToBackStack(TAG)
+                }
             }
         }
         // Observe data from the viewModel.
@@ -202,6 +205,8 @@ class MainFragment : Fragment(R.layout.fragment_main) {
     }
 
     companion object {
+        const val TAG = "MainFragment"
+
         /** Intent action for stopwatch controls from Picture-in-Picture mode.  */
         private const val ACTION_STOPWATCH_CONTROL = "stopwatch_control"
 
