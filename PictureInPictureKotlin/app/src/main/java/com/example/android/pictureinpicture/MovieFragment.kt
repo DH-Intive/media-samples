@@ -17,7 +17,6 @@
 package com.example.android.pictureinpicture
 
 import android.app.PictureInPictureParams
-import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Rect
 import android.os.Bundle
@@ -27,38 +26,24 @@ import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.text.util.Linkify
 import android.util.Rational
+import android.view.LayoutInflater
 import android.view.View
-import androidx.appcompat.app.AppCompatActivity
+import android.view.ViewGroup
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.doOnLayout
-import com.example.android.pictureinpicture.databinding.MovieActivityBinding
+import androidx.fragment.app.Fragment
+import com.example.android.pictureinpicture.databinding.FragmentMovieBinding
 import com.example.android.pictureinpicture.widget.MovieView
 
 /**
  * Demonstrates usage of Picture-in-Picture when using [MediaSessionCompat].
  */
-class MovieActivity : AppCompatActivity() {
+class MovieFragment : Fragment(R.layout.fragment_movie) {
 
-    companion object {
-
-        private const val TAG = "MediaSessionPlaybackActivity"
-
-        private const val MEDIA_ACTIONS_PLAY_PAUSE =
-            PlaybackStateCompat.ACTION_PLAY or
-                    PlaybackStateCompat.ACTION_PAUSE or
-                    PlaybackStateCompat.ACTION_PLAY_PAUSE
-
-        private const val MEDIA_ACTIONS_ALL =
-            MEDIA_ACTIONS_PLAY_PAUSE or
-                    PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
-                    PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
-
-        private const val PLAYLIST_SIZE = 2
-    }
-
-    private lateinit var binding: MovieActivityBinding
+    private var _binding: FragmentMovieBinding? = null
+    private val binding get() = _binding!!
 
     private lateinit var session: MediaSessionCompat
 
@@ -93,16 +78,22 @@ class MovieActivity : AppCompatActivity() {
         }
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = MovieActivityBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = FragmentMovieBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
         Linkify.addLinks(binding.explanation, Linkify.ALL)
         binding.pip.setOnClickListener { minimize() }
         binding.switchExample.setOnClickListener {
-            startActivity(Intent(this@MovieActivity, MainActivity::class.java))
-            finish()
+            parentFragmentManager.popBackStack()
         }
 
         // Configure parameters for the picture-in-picture mode. We do this at the first layout of
@@ -119,9 +110,9 @@ class MovieActivity : AppCompatActivity() {
     }
 
     private fun initializeMediaSession() {
-        session = MediaSessionCompat(this, TAG)
+        session = MediaSessionCompat(requireActivity(), TAG)
         session.isActive = true
-        MediaControllerCompat.setMediaController(this, session.controller)
+        MediaControllerCompat.setMediaController(requireActivity(), session.controller)
 
         val metadata = MediaMetadataCompat.Builder()
             .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, binding.movie.title)
@@ -151,9 +142,14 @@ class MovieActivity : AppCompatActivity() {
         session.release()
     }
 
-    override fun onRestart() {
-        super.onRestart()
-        if (!isInPictureInPictureMode) {
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (!requireActivity().isInPictureInPictureMode) {
             // Show the video controls so the video can be easily resumed.
             binding.movie.showControls()
         }
@@ -164,17 +160,8 @@ class MovieActivity : AppCompatActivity() {
         adjustFullScreen(newConfig)
     }
 
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) {
-            adjustFullScreen(resources.configuration)
-        }
-    }
-
-    override fun onPictureInPictureModeChanged(
-        isInPictureInPictureMode: Boolean, newConfig: Configuration
-    ) {
-        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode)
         if (isInPictureInPictureMode) {
             // Hide the controls in picture-in-picture mode.
             binding.movie.hideControls()
@@ -201,7 +188,7 @@ class MovieActivity : AppCompatActivity() {
             // by the "Home" button.
             .setAutoEnterEnabled(true)
             .build()
-        setPictureInPictureParams(params)
+        requireActivity().setPictureInPictureParams(params)
         return params
     }
 
@@ -209,7 +196,7 @@ class MovieActivity : AppCompatActivity() {
      * Enters Picture-in-Picture mode.
      */
     private fun minimize() {
-        enterPictureInPictureMode(updatePictureInPictureParams())
+        requireActivity().enterPictureInPictureMode(updatePictureInPictureParams())
     }
 
     /**
@@ -218,7 +205,8 @@ class MovieActivity : AppCompatActivity() {
      * @param config The current [Configuration].
      */
     private fun adjustFullScreen(config: Configuration) {
-        val insetsController = ViewCompat.getWindowInsetsController(window.decorView)
+        val insetsController =
+            ViewCompat.getWindowInsetsController(requireActivity().window.decorView)
         insetsController?.systemBarsBehavior =
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         if (config.orientation == Configuration.ORIENTATION_LANDSCAPE) {
@@ -323,5 +311,20 @@ class MovieActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    companion object {
+        private const val TAG = "MediaSessionPlaybackFragment"
+        private const val MEDIA_ACTIONS_PLAY_PAUSE =
+            PlaybackStateCompat.ACTION_PLAY or
+                    PlaybackStateCompat.ACTION_PAUSE or
+                    PlaybackStateCompat.ACTION_PLAY_PAUSE
+        private const val MEDIA_ACTIONS_ALL =
+            MEDIA_ACTIONS_PLAY_PAUSE or
+                    PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
+                    PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+        private const val PLAYLIST_SIZE = 2
+
+        fun newInstance() = MovieFragment()
     }
 }
